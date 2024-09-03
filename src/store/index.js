@@ -1,8 +1,10 @@
 /* import { createStore, combineReducers, compose, applyMiddleware } from 'redux';
 import {thunk} from "redux-thunk"; (middleware для передачи функций в dispatch) */ 
 import { configureStore } from '@reduxjs/toolkit';
-import heroes from '../reducers/heroes';
-import filters from '../reducers/filters';
+// import heroes from '../reducers/heroes';
+import heroes from "../components/heroesList/heroesSlice"; /* (cоздали отдельно редьюсер с помощью createSlice) */
+// import filters from '../reducers/filters';
+import filters from "../components/heroesFilters/filtersSlice"; /* (cоздали отдельно редьюсер с помощью createSlice) */
 
 const stringMiddleware = () => (next) => (action) => { 
     if (typeof action === 'string') { 

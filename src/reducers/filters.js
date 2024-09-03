@@ -1,3 +1,4 @@
+/* (пример создания редьюсера без toolkit,  в окончательном варианте рабочий редьюсер в heroesFilters/filtersSlice.js) */
 const initialState = {
     filters: [],
     filtersLoadingStatus: 'idle',

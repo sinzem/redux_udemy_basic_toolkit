@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit";
-
+/* (cоздание редьюсера с помощью createReducer, оставлен как пример работы, в окончательном варианте рабочий редьюсер в heroesList/heroesSlice.js) */
 import {
     heroesFetching,
     heroesFetched,
