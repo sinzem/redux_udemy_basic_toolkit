@@ -1,11 +1,16 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 /* (createSlice позволяет обьединить создание редьюсера и действий в одну функцию, createAsyncThunk - для работы с асинхронными действиями) */
 import { useHttp } from "../../hooks/http.hook";
 
-const initialState = {
-    heroes: [],
-    heroesLoadingStatus: 'idle'
-}
+const heroesAdapter = createEntityAdapter(); /* (создаем адаптер, как аргументы можно передать функции по донастройке - в документации приведены как примеры функция с добавлением id и функция сортировки) */
+
+// const initialState = {
+//     heroes: [],
+//     heroesLoadingStatus: 'idle'
+// }
+const initialState = heroesAdapter.getInitialState({ /* (cоздаем начальные состояния с помощью встроенной функции адаптера(имеет две встроенных сущности - entity(в нее автоматически пойдет полученынй массив из запроса - heroes) и ids(для id))) */
+    heroesLoadingStatus: "idle" /* (передаем дополнительные состояния) */
+}); /* (для изменения состояний имеет набор встроенных функций(СRUD, наподобие addOne или deleteAll, список в документации, функции следят за нормализацией данных - не перезаписывают одинаковые и следят за иммутабельностью) - их вызываем в редьюсере при изменении состояний) */
 
 export const fetchHeroes = createAsyncThunk(
     'heroes/fetchHeroes', /* (рабочее имя - heroes из редьюсера + имя асинхронной функции) */
@@ -20,17 +25,19 @@ const heroesSlice = createSlice({ /* (создаем редьюсер) */
     initialState, /* (начальные состояния) */
     reducers: { /* (сам обьект редьюсера) */
         /* (без свитча - название действия и функция по изменению состояния(об иммутабельности не заботимся - работает автоматически(но не пишем return и подключаем миддлверы по умолчанию при создании store))) */
-        heroesFetching: state => {state.heroesLoadingStatus = "loading"},
-        heroesFetched: (state, action) => {
-                            state.heroesLoadingStatus = "idle";
-                            state.heroes = action.payload;
-                        },   /* (можно подключать вторую функцию по предварительной подготовке payload - например, если нужно добавить id(в документации)) */
-        heroesFetchingError: state => {state.heroesLoadingStatus = "error"},
+        // heroesFetching: state => {state.heroesLoadingStatus = "loading"},
+        // heroesFetched: (state, action) => {
+        //                     state.heroesLoadingStatus = "idle";
+        //                     state.heroes = action.payload;
+        //                 },   /* (можно подключать вторую функцию по предварительной подготовке payload - например, если нужно добавить id(в документации)) */
+        // heroesFetchingError: state => {state.heroesLoadingStatus = "error"},
         heroCreated: (state, action) => { 
-                            state.heroes.push(action.payload);
+                            // state.heroes.push(action.payload);
+                            heroesAdapter.addOne(state, action.payload);
                         },
         heroDeleted: (state, action) => {
-                            state.heroes = state.heroes.filter(item => item.id !== action.payload);
+                            // state.heroes = state.heroes.filter(item => item.id !== action.payload);
+                            heroesAdapter.removeOne(state, action.payload);
                         }
     },
     /* (если при работе нужен функционал из других редьюсеров, их подключают последним полем(extraReducers), подробнее в документации) */
@@ -40,7 +47,8 @@ const heroesSlice = createSlice({ /* (создаем редьюсер) */
             .addCase(fetchHeroes.pending, state => {state.heroesLoadingStatus = "loading"})
             .addCase(fetchHeroes.fulfilled, (state, action) => {
                         state.heroesLoadingStatus = "idle";
-                        state.heroes = action.payload;
+                        // state.heroes = action.payload;
+                        heroesAdapter.setAll(state, action.payload); /* (при работе с адаптером встроенная функция setAll полностью заменит в state полученные данные(action.payload - массив с героями), для получения этих состояний из store прописываем дополнительный экспорт(внизу документа)) */
                     })
             .addCase(fetchHeroes.rejected, state => {
                         state.heroesLoadingStatus = "error";
@@ -52,6 +60,21 @@ const heroesSlice = createSlice({ /* (создаем редьюсер) */
 const {actions, reducer} = heroesSlice; /* (деструктурируем обьект) */
 
 export default reducer; /* (по дефолту экспортируем редьюсер, в state подключаем по полю name из редьюсера) */
+
+export const {selectAll} = heroesAdapter.getSelectors(state => state.heroes); /* (при работе с createEmptityAdapter экспортируем встроенный обьект selectAll(остальные смотреть в документации) - с помощью метода getSelectors получит указанные состояния(heroes)) */
+
+export const filteredHeroesSelector = createSelector( 
+    (state) => state.filters.activeFilter,
+    // (state) => state.heroes.heroes,
+    selectAll,
+    (filter, heroes) => { 
+        if (filter === "all") {
+            return heroes;
+        } else {
+            return heroes.filter(item => item.element === filter)
+        }
+    }
+) 
 
 export const {
     heroesFetching,
